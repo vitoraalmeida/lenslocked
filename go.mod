@@ -1,4 +1,4 @@
-module gihub.com/vitoraalmeida/lenslocked
+module github.com/vitoraalmeida/lenslocked
 
 go 1.18
 
