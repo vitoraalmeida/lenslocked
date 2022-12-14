@@ -1,0 +1,15 @@
+<h1>Hello, {{.Name}}. You age is {{.Age}} </h1>
+<h2>Abou you</h2>
+<p>{{.Bio}}</p>
+<p>You had {{.Meta.Visits}} visitors</p>
+
+<script>
+  const user = {
+    "name": {{.Name}},
+    "bio": {{.Bio}}, // o html/template vai renderizar de forma que quando processado
+    //pelo javascript, sera envolvido por aspas, pois o tipo de Bio é string
+    "age": {{.Age}} // bem como inteiros não terão áspas
+  };
+  console.log(user);
+</script>
+
