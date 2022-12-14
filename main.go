@@ -10,10 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func executeTemplate(w http.ResponseWriter, filepath string) {
 	w.Header().Set("Content-Type", "text/html charset=UTF-8")
-	tplPath := filepath.Join("templates", "home.tmpl")
-	tpl, err := template.ParseFiles(tplPath)
+	tpl, err := template.ParseFiles(filepath)
 	if err != nil {
 		log.Printf("parsing template: %v", err)
 		http.Error(w, "There was an error parsing the template.", http.StatusInternalServerError)
@@ -27,31 +26,19 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	tplPath := filepath.Join("templates", "home.tmpl")
+	executeTemplate(w, tplPath)
+}
+
 func contactHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-7")
-	fmt.Fprint(w, "<h1>Contact Page</h1><p>To get in touch, email me at <a href=\"mailto:pro.vitoralmeida@gmail.com\">pro.vitoralmeida@gmail.com</a>.</p>")
+	tplPath := filepath.Join("templates", "contact.tmpl")
+	executeTemplate(w, tplPath)
 }
 
 func faqHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, `<h1>FAQ Page</h1>
-<ul>
-  <li>
-    <b>Is there a free version?</b>
-    Yes! We offer a free trial for 30 days on any paid plans.
-  </li>
-  <li>
-    <b>What are your support hours?</b>
-    We have support staff answering emails 24/7, though response
-    times may be a bit slower on weekends.
-  </li>
-  <li>
-    <b>How do I contact support?</b>
-    Email us - <a href="mailto:support@lenslocked.com">support@lenslocked.com</a>
-  </li>
-</ul>
-`)
-
+	tplPath := filepath.Join("templates", "faq.tmpl")
+	executeTemplate(w, tplPath)
 }
 
 func main() {
