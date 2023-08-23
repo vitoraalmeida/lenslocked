@@ -1,8 +1,10 @@
 package views
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -38,13 +40,21 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 		},
 	)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = tpl.Execute(w, data)
-
+	var buf bytes.Buffer
+	// executa num buffer antes para que o status code não seja definido para sucesso
+	// ainda que tenha acontecido um erro na execução do template. O servidor do go
+	// define como sucesso qualquer resposta que não tenha statuc code definido manualmente.
+	// Quando escrevemos no response writer uma vez, na próxima vez que escrevermos (no caso
+	// o tratamento do erro abaixo) a definição do status não vai ser levada em consideração
+	// pois já foi definida antes
+	err = tpl.Execute(&buf, data)
 	if err != nil {
 		log.Printf("executing template: %v", err)
 		http.Error(w, "There was an error executing the template.", http.StatusInternalServerError)
 		return
 	}
+	// escreve no http.ResponseWriter apenas se não houve erro
+	io.Copy(w, &buf)
 }
 
 // útil quando retornamos um tipo e um erro e só retornamos o tipo se não houver erro
@@ -74,8 +84,10 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 			// o parsing do template quando o servidor inicia para sabermos se o parsing
 			// ocorreu corretamente. Essa função será atualizada posteriormente quando
 			// existir uma request de fato, que é de onde vem o token csrf
-			"csrfField": func() template.HTML {
-				return `<!-- TODO: Implement the csrfField-->`
+			"csrfField": func() (template.HTML, error) {
+				// a função retornará erro quando o template for executado sem a substituição
+				// da função que de fato gera o csrf token
+				return "", fmt.Errorf("csrfField not implemented")
 			},
 		},
 	)
