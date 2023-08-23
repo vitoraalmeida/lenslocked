@@ -65,9 +65,10 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie := http.Cookie{
-		Name:  "email",
-		Value: user.Email,
-		Path:  "/", /*Define em que rotas na aplicação o cookie é acessível*/
+		Name:     "email",
+		Value:    user.Email,
+		Path:     "/",  /*Define em que rotas na aplicação o cookie é acessível*/
+		HttpOnly: true, /* define que JS não pode acessar cookies (XSS) */
 	}
 	http.SetCookie(w, &cookie) /*adiciona o header set-cookie no response*/
 	fmt.Fprintf(w, "User authenticated: %+v", user)
