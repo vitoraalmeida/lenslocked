@@ -61,8 +61,14 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 	user, err := u.UserService.Authenticate(data.Email, data.Password)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid credentials", http.StatusBadGateway)
+		http.Error(w, "Invalid credentials", http.StatusBadRequest)
 		return
 	}
+	cookie := http.Cookie{
+		Name:  "email",
+		Value: user.Email,
+		Path:  "/", /*Define em que rotas na aplicação o cookie é acessível*/
+	}
+	http.SetCookie(w, &cookie) /*adiciona o header set-cookie no response*/
 	fmt.Fprintf(w, "User authenticated: %+v", user)
 }
