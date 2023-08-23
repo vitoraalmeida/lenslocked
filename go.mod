@@ -4,12 +4,12 @@ go 1.18
 
 require (
 	github.com/go-chi/chi/v5 v5.0.8
+	github.com/gorilla/csrf v1.7.1
 	github.com/jackc/pgx/v4 v4.18.1
 	golang.org/x/crypto v0.12.0
 )
 
 require (
-	github.com/gorilla/csrf v1.7.1 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.0 // indirect
