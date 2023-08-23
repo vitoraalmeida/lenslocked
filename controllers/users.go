@@ -3,6 +3,8 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/vitoraalmeida/lenslocked/models"
 )
 
 // desacopla o controller das views, injetando a instância
@@ -13,6 +15,7 @@ type Users struct {
 	Templates struct {
 		New Template
 	}
+	UserService *models.UserService
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +35,13 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 
 	// não checará erro pois se esses valores não estivem presentes, não há nada
 	// para fazer além de retornar erro
-	fmt.Fprint(w, "Email: ", r.FormValue("email"))
-	fmt.Fprint(w, "Pass: ", r.FormValue("password"))
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	user, err := u.UserService.Create(email, password)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "User craeted: %+v", user)
 }
