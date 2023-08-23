@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 
+	"github.com/gorilla/csrf"
 	"github.com/vitoraalmeida/lenslocked/models"
 )
 
@@ -20,7 +22,13 @@ type Users struct {
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
-	u.Templates.New.Execute(w, nil)
+	var data struct {
+		CSRFField template.HTML
+	}
+	data.CSRFField = csrf.TemplateField(r)
+	// adiciona no formulário um campo contendo o token CSRF que será enviado juntamente com os
+	// outros dados
+	u.Templates.New.Execute(w, data)
 }
 
 func (u Users) Create(w http.ResponseWriter, r *http.Request) {
