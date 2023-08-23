@@ -6,11 +6,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/vitoraalmeida/lenslocked/controllers"
+	"github.com/vitoraalmeida/lenslocked/models"
 	"github.com/vitoraalmeida/lenslocked/templates"
 	"github.com/vitoraalmeida/lenslocked/views"
 )
 
 func main() {
+	cfg := models.DefaultPostgresConfig()
+	db, err := models.Open(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	r := chi.NewRouter()
 
 	tpl := views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))
