@@ -13,7 +13,8 @@ import (
 // desde que obedeça a interface template (controlers/template.go)
 type Users struct {
 	Templates struct {
-		New Template
+		New    Template
+		SignIn Template
 	}
 	UserService *models.UserService
 }
@@ -44,4 +45,8 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "User craeted: %+v", user)
+}
+
+func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
+	u.Templates.SignIn.Execute(w, nil)
 }
