@@ -9,7 +9,7 @@
            para que o servidor possa validar que um formulário foi enviado de um cliente que
            de fato foi gerado pelo sistema e não por um atacante (CSRF) -->
       <div class="hidden">
-        {{.CSRFField}}
+        {{csrfField}} <!-- definido em views/template.go -->
       </div>
       <div class="py-2">
         <label for="email" class="text-sm font-semibold text-gray-800">
