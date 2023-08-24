@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/csrf"
+	"github.com/joho/godotenv"
 	"github.com/vitoraalmeida/lenslocked/controllers"
 	"github.com/vitoraalmeida/lenslocked/migrations"
 	"github.com/vitoraalmeida/lenslocked/models"
@@ -13,10 +16,56 @@ import (
 	"github.com/vitoraalmeida/lenslocked/views"
 )
 
+type config struct {
+	PSQL models.PostgresConfig
+	SMTP models.SMTPConfig
+	CSRF struct {
+		Key    string
+		Secure bool
+	}
+	Server struct {
+		Address string
+	}
+}
+
+func loadEnvConfig() (config, error) {
+	var cfg config
+	err := godotenv.Load()
+	if err != nil {
+		return cfg, err
+	}
+	// TODO: Read the PSQL values from an ENV variable
+	cfg.PSQL = models.DefaultPostgresConfig()
+
+	// TODO: SMTP
+	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
+	portStr := os.Getenv("SMTP_PORT")
+	cfg.SMTP.Port, err = strconv.Atoi(portStr)
+	if err != nil {
+		return cfg, err
+	}
+	cfg.SMTP.Username = os.Getenv("SMTP_USERNAME")
+	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
+
+	// chave necessária para o gorilla csrf criar um token aleatório
+	// TODO: Read the CSRF values from an ENV variable
+	cfg.CSRF.Key = "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
+	cfg.CSRF.Secure = false
+
+	// TODO: Read the server values from an ENV variable
+	cfg.Server.Address = ":3000"
+
+	return cfg, nil
+}
+
 func main() {
-	// setup database
-	cfg := models.DefaultPostgresConfig()
-	db, err := models.Open(cfg)
+	cfg, err := loadEnvConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	// Setup the database
+	db, err := models.Open(cfg.PSQL)
 	if err != nil {
 		panic(err)
 	}
@@ -38,25 +87,29 @@ func main() {
 	sessionService := models.SessionService{
 		DB: db,
 	}
+	pwResetService := models.PasswordResetService{
+		DB: db,
+	}
+	emailService := models.NewEmailService(cfg.SMTP)
 
 	// setup middlewares
 	umw := controllers.UserMiddleware{
 		SessionService: &sessionService,
 	}
 
-	// chave necessária para o gorilla csrf criar um token aleatório
-	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
 	csrfMw := csrf.Protect(
-		[]byte(csrfKey),
-		// TODO: Fix this before deploying
-		csrf.Secure(false), // a proteção necessita que seja usada numa conexão com https(prod)
+		[]byte(cfg.CSRF.Key),
+		csrf.Secure(cfg.CSRF.Secure),
 	)
 
 	// setup controllers
 	usersC := controllers.Users{
-		UserService:    &userService,
-		SessionService: &sessionService,
+		UserService:          &userService,
+		SessionService:       &sessionService,
+		PasswordResetService: &pwResetService,
+		EmailService:         emailService,
 	}
+
 	usersC.Templates.New = views.Must(views.ParseFS(
 		templates.FS, "signup.gohtml", "tailwind.gohtml",
 	))
@@ -100,9 +153,12 @@ func main() {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
 
-	fmt.Println("Starting ther server on :3000...")
-
-	http.ListenAndServe(":3000", r)
+	// Start the server
+	fmt.Printf("Starting the server on %s...\n", cfg.Server.Address)
+	err = http.ListenAndServe(cfg.Server.Address, r)
+	if err != nil {
+		panic(err)
+	}
 
 }
 
