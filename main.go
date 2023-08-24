@@ -21,7 +21,10 @@ func main() {
 	}
 	defer db.Close()
 
-	// aplica migrations automaticamente
+	// aplica migrations automaticamente utlizando arquivos
+	// de migration embutidos no binário, assim não precisamos
+	// copiar arquivos de migration para o local de produção
+	// manualmente
 	err = models.MigrateFS(db, migrations.FS, ".")
 	if err != nil {
 		panic(err)

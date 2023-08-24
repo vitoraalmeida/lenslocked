@@ -55,6 +55,10 @@ func MigrateFS(db *sql.DB, migrationsFS fs.FS, dir string) error {
 	if dir == "" {
 		dir = "."
 	}
+	// define que o diretório base do fs dos migrations é o diretório
+	// onde colocamos o fs.go dos migrations = migrations/fs.go
+	// assim ele vai considerar esse caminho quando for executar as
+	// migrations passando o local "."
 	goose.SetBaseFS(migrationsFS)
 	defer func() {
 		// Ensure that we remove the FS on the off chance some other part of our app uses goose for migrations and doesn't want to use our FS.
