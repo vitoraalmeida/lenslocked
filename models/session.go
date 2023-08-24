@@ -44,15 +44,26 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 		Token:     token,
 		TokenHash: ss.hash(token),
 	}
+
+	// tenta primeiro atualizar uma sessão existente com um novo token,
+	// se não existir uma sessão, cria uma nova
 	row := ss.DB.QueryRow(
-		`INSERT INTO 
-			sessions (user_id, token_hash) 
-		VALUES ($1, $2) RETURNING id;
-		`, session.UserID, session.TokenHash)
+		`UPDATE sessions SET token_hash = $2 WHERE user_id = $1 RETURNING id;`,
+		session.UserID, session.TokenHash)
 	err = row.Scan(&session.ID)
+	// quando não há nenhuma linha retornada, o pacote sql do go gera o erro ErrNoRows
+	if err == sql.ErrNoRows {
+		row = ss.DB.QueryRow(
+			`INSERT INTO sessions (user_id, token_hash) VALUES ($1, $2) RETURNING id;`,
+			session.UserID, session.TokenHash)
+		err = row.Scan(&session.ID)
+	}
+
+	// checa por outros erros
 	if err != nil {
 		return nil, fmt.Errorf("create: %w", err)
 	}
+
 	return &session, nil
 }
 
