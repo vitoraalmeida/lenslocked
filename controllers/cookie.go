@@ -32,6 +32,7 @@ func readCookie(r *http.Request, name string) (string, error) {
 	return c.Value, nil
 }
 
+// sinaliza ao browser que o cookie já expirou
 func deleteCookie(w http.ResponseWriter, name string) {
 	cookie := newCookie(name, "")
 	cookie.MaxAge = -1
