@@ -10,6 +10,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/csrf"
+	"github.com/vitoraalmeida/lenslocked/context"
+	"github.com/vitoraalmeida/lenslocked/models"
 )
 
 type Template struct {
@@ -36,6 +38,9 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 		template.FuncMap{
 			"csrfField": func() template.HTML {
 				return csrf.TemplateField(r)
+			},
+			"currentUser": func() *models.User {
+				return context.User(r.Context())
 			},
 		},
 	)
@@ -88,6 +93,11 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 				// a função retornará erro quando o template for executado sem a substituição
 				// da função que de fato gera o csrf token
 				return "", fmt.Errorf("csrfField not implemented")
+			},
+			"currentUser": func() (template.HTML, error) {
+				// a função retornará erro quando o template for executado sem a substituição
+				// da função que de fato checa o usuário
+				return "", fmt.Errorf("currentUser not implemented")
 			},
 		},
 	)
