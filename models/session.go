@@ -45,19 +45,30 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 		TokenHash: ss.hash(token),
 	}
 
-	// tenta primeiro atualizar uma sessão existente com um novo token,
-	// se não existir uma sessão, cria uma nova
-	row := ss.DB.QueryRow(
-		`UPDATE sessions SET token_hash = $2 WHERE user_id = $1 RETURNING id;`,
-		session.UserID, session.TokenHash)
-	err = row.Scan(&session.ID)
-	// quando não há nenhuma linha retornada, o pacote sql do go gera o erro ErrNoRows
-	if err == sql.ErrNoRows {
-		row = ss.DB.QueryRow(
-			`INSERT INTO sessions (user_id, token_hash) VALUES ($1, $2) RETURNING id;`,
+	/*
+		// tenta primeiro atualizar uma sessão existente com um novo token,
+		// se não existir uma sessão, cria uma nova
+		row := ss.DB.QueryRow(
+			`UPDATE sessions SET token_hash = $2 WHERE user_id = $1 RETURNING id;`,
 			session.UserID, session.TokenHash)
 		err = row.Scan(&session.ID)
-	}
+		// quando não há nenhuma linha retornada, o pacote sql do go gera o erro ErrNoRows
+		if err == sql.ErrNoRows {
+			row = ss.DB.QueryRow(
+				`INSERT INTO sessions (user_id, token_hash) VALUES ($1, $2) RETURNING id;`,
+				session.UserID, session.TokenHash)
+			err = row.Scan(&session.ID)
+		}
+	*/
+
+	/* para o postgres podemos fazer uma query só para o mesmo resultado*/
+	row := ss.DB.QueryRow(`
+		INSERT INTO sessions (user_id, token_hash)
+		VALUES ($1, $2) ON CONFLICT (user_id) DO
+		UPDATE
+		SET token_hash = $2
+		RETURNING id;`, session.UserID, session.TokenHash)
+	err = row.Scan(&session.ID)
 
 	// checa por outros erros
 	if err != nil {
