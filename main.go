@@ -64,7 +64,10 @@ func main() {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
 
-	fmt.Println("Starting ther server on :3000...")
+	umw := controllers.UserMiddleware{
+		SessionService: &sessionService,
+	}
+
 	// chave necessária para o gorilla csrf criar um token aleatório
 	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
 	csrfMw := csrf.Protect(
@@ -72,7 +75,10 @@ func main() {
 		// TODO: Fix this before deploying
 		csrf.Secure(false), // a proteção necessita que seja usada numa conexão com https(prod)
 	)
-	http.ListenAndServe(":3000", csrfMw(r)) // utilzia a proteção csrf em todas as requisições
+
+	fmt.Println("Starting ther server on :3000...")
+	// utilzia a proteção csrf e o middleware de recuperação de usuário na requisição em todas as requisições. Primeiro aplica a recuperação do usuário no contexto e depois o csrf
+	http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
 	// exige que seja passado um token nas requisições que garantem que a requisição para o servidor
 	// foi originada de um formulário (ou outra forma de interação) que foi criada pelo próprio
 	// servidor. Se algum atacante tentar fazer uma cópia do sistema adicionando alguma interação
