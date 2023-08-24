@@ -96,6 +96,8 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
+	// redundante, pois o middleware RequireUser já garante que se chegou aqui
+	// é pq tem um usuário presente
 	if user == nil {
 		http.Redirect(w, r, "/signin", http.StatusFound)
 		return
@@ -123,6 +125,8 @@ type UserMiddleware struct {
 	SessionService *models.SessionService
 }
 
+// middleware que recupera o token de sessão de um usuário caso esteja presente
+// e coloca no contexto das requisições futuras para que todas tenham acesso
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := readCookie(r, CookieSession)
@@ -140,6 +144,21 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 		ctx := r.Context()
 		ctx = context.WithUser(ctx, user)
 		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Assume que o middleware setUser foi usado e caso não haja usuário presente
+// redireciona para a pagina de login. Limita o uso de recursos para usuários
+// autenticados
+func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := context.User(r.Context())
+		if user == nil {
+			http.Redirect(w, r, "/signin", http.StatusFound)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
