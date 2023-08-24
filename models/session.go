@@ -90,6 +90,17 @@ func (ss *SessionService) User(token string) (*User, error) {
 	return &user, nil
 }
 
+func (ss *SessionService) Delete(token string) error {
+	tokenHash := ss.hash(token)
+	_, err := ss.DB.Exec(`
+		DELETE FROM sessions
+		WHERE token_hash = $1;`, tokenHash)
+	if err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+	return nil
+}
+
 func (ss *SessionService) hash(token string) string {
 	// não utiliza bcrypt pois ele adiciona um salt em cada geração de hash,
 	// de forma que seria necessário adicionar uma lógica para definir qual
