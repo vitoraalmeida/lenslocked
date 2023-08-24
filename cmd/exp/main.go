@@ -1,67 +1,34 @@
 package main
 
 import (
-	"html/template"
-	"os"
-	//"text/template"
+	"context"
+	"fmt"
 )
 
-type User struct {
-	Name string
-	Age  int
-	Bio  string // se não quiser que encode usar o tipo template.HTML
-	Meta UserMeta
-}
+// usar tipos customizados como keys em contexts, pois
+// assim ele só poderá ser usado com valores que obedecem
+// ao tipo definido, assim outros pacotes não conseguirão
+// sobrescrever a chave por acidente
+// não expor o tipo para que código fora do pacote não possa
+// usar a mesma chave
+type ctxKey string
 
-type UserMeta struct {
-	Visits int
-}
+const (
+	// não expor o a chave para que código fora do pacote não possa
+	// usar a mesma chave
+	favoriteColorKey ctxKey = "favorite-color"
+)
 
 func main() {
-	t, err := template.ParseFiles("hello.tmpl")
-	if err != nil {
-		panic(err)
-	}
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, favoriteColorKey, "blue")
+	value := ctx.Value(favoriteColorKey)
+	fmt.Println(value)
 
-	// usando text/template, os caracteres <> são interpretados literalmente
-	// então o código script vai ser executado e o comando js vai rodar
-	// XSS
-	// o html/template fazer o escape dos caracteres especiais, evitando isso
-
-	user := User{
-		Name: "John Smith",
-		Age:  19,
-		Bio:  `<script>alert("haha, you have been hacked!");</script>`,
-		Meta: UserMeta{
-			Visits: 4,
-		},
+	// type assertions
+	strValue, ok := value.(int)
+	if !ok {
+		fmt.Println("não é string")
 	}
-
-	user2 := struct {
-		Name string
-		Age  int
-		Bio  string
-		Meta struct {
-			Visits int
-		}
-	}{
-		Name: "Susan Smith",
-		Age:  29,
-		Bio:  `<script>alert("haha, you have been h4x0r3d!");</script>`,
-		Meta: struct {
-			Visits int
-		}{
-			Visits: 19,
-		},
-	}
-	// recebe onde será escrito o resultado e o dado que será usando no template
-	err = t.Execute(os.Stdout, user)
-	if err != nil {
-		panic(err)
-	}
-
-	err = t.Execute(os.Stdout, user2)
-	if err != nil {
-		panic(err)
-	}
+	fmt.Printf("valor: %s", strValue)
 }
