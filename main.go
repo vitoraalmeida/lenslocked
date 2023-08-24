@@ -20,6 +20,12 @@ func main() {
 	}
 	defer db.Close()
 
+	// aplica migrations automaticamente
+	err = models.Migrate(db, "migrations")
+	if err != nil {
+		panic(err)
+	}
+
 	r := chi.NewRouter()
 
 	tpl := views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))
