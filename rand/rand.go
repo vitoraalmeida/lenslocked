@@ -25,12 +25,3 @@ func String(n int) (string, error) {
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
 }
-
-// 32 bytes = 256 (caracteres existentes) * 32 (quantidade de caracteres) possibilidades
-// 115792089237316195423570985008687907853269984665640564039457584007913129639936
-// OWASP: tokens de sessão devem ter pelo menos 16 bytes
-const SessionTokenBytes = 32
-
-func SessionToken() (string, error) {
-	return String(SessionTokenBytes)
-}
