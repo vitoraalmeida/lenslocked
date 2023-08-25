@@ -88,6 +88,7 @@ func (service *PasswordResetService) Consume(token string) (*User, error) {
 	tokenHash := service.hash(token)
 	var user User
 	var pwReset PasswordReset
+	// busca se hé um reset de password definido para esse token
 	row := service.DB.QueryRow(`
 		SELECT password_resets.id,
 			password_resets.expires_at,
@@ -103,13 +104,16 @@ func (service *PasswordResetService) Consume(token string) (*User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("consume: %w", err)
 	}
+	// verifica se já expirou
 	if time.Now().After(pwReset.ExpiresAt) {
 		return nil, fmt.Errorf("token expires: %v", token)
 	}
+	// deleta o reset de password para que não possa ser reutilizado
 	err = service.delete(pwReset.ID)
 	if err != nil {
 		return nil, fmt.Errorf("consume: %w", err)
 	}
+	// retorna dados de usuário para que possa ser atualizado com nova senha
 	return &user, nil
 }
 

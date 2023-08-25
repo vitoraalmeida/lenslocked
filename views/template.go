@@ -99,6 +99,13 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 				// da função que de fato checa o usuário
 				return "", fmt.Errorf("currentUser not implemented")
 			},
+			"errors": func() []string {
+				return []string{
+					"Don't do that!",
+					"The email address you provided is already associated with an account",
+					"Somethign went wrong",
+				}
+			},
 		},
 	)
 	// o pacte html/template possui uma função para buscar o template embutido no fs
