@@ -2,6 +2,7 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -13,6 +14,11 @@ import (
 	"github.com/vitoraalmeida/lenslocked/context"
 	"github.com/vitoraalmeida/lenslocked/models"
 )
+
+// usado para determinar se um erro é para usuários ou para ser mostrado internamente
+type public interface {
+	Public() string
+}
 
 type Template struct {
 	htmlTpl *template.Template
@@ -34,6 +40,7 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 	}
 	// atualiza a função de template csrfFiel adicionada no parseFS com o conteúdo correto
 	// que é o token csrf gerado pelo gorilla csrf middleware
+	errMsgs := errMessages(errs...)
 	tpl = tpl.Funcs(
 		template.FuncMap{
 			"csrfField": func() template.HTML {
@@ -43,12 +50,7 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 				return context.User(r.Context())
 			},
 			"errors": func() []string {
-				var errorMessages []string
-				for _, err := range errs {
-					// TODO: Don't keep this long term - we will see why in a later lesson
-					errorMessages = append(errorMessages, err.Error())
-				}
-				return errorMessages
+				return errMsgs
 			},
 		},
 	)
@@ -122,6 +124,20 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 	return Template{
 		htmlTpl: tpl,
 	}, nil
+}
+
+func errMessages(errs ...error) []string {
+	var msgs []string
+	for _, err := range errs {
+		var pubErr public
+		if errors.As(err, &pubErr) {
+			msgs = append(msgs, pubErr.Public())
+		} else {
+			fmt.Println(err)
+			msgs = append(msgs, "Something went wrong.")
+		}
+	}
+	return msgs
 }
 
 // func Parse(filepath string) (Template, error) {
