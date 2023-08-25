@@ -2,10 +2,19 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	// A common pattern is to add the package as a prefix to the error for
+	// context.
+	ErrEmailTaken = errors.New("models: email address is already in use")
 )
 
 type User struct {
@@ -35,9 +44,21 @@ func (us *UserService) Create(email, password string) (*User, error) {
 		VALUES ($1, $2) RETURNING id`, email, passwordHash)
 	err = row.Scan(&user.ID)
 	if err != nil {
+		// See if we can use this error as a PgError
+		var pgError *pgconn.PgError
+		// errors.As verifica se na árvore de erros que temos existe algum que
+		// seja o que passamos. Se sim, ele preenche a instância do erro com o
+		// erro concreto.
+		if errors.As(err, &pgError) {
+			// This is a PgError, so see if it matches a unique violation.
+			if pgError.Code == pgerrcode.UniqueViolation {
+				// If this is true, it has to be an email violation since this is the
+				// only way to trigger this type of violation with our SQL.
+				return nil, ErrEmailTaken
+			}
+		}
 		return nil, fmt.Errorf("create user: %w", err)
 	}
-
 	return &user, nil
 }
 
